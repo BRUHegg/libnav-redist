@@ -96,7 +96,7 @@ namespace libnav
     // Number of columns in string containing SID/STAR/APPCH
     constexpr size_t N_ARINC_FLT_PROC_COL = 38;
     // Maximum number of characters for the data designator(comes before the :)
-    constexpr int ARINC_MAX_TP_LENGTH = 5;
+    constexpr size_t ARINC_MAX_TP_LENGTH = 5;
     // Number of columns in the first part of a runway entry
     constexpr int N_ARINC_RWY_COL_FIRST = 8;
     constexpr int N_ARINC_RWY_COL_SECOND = 3;
@@ -244,7 +244,7 @@ namespace libnav
         std::string outbd_mag_crs;  // Column 21. Magnetic course from main_fix *10. If true, has T at the end. 
             // Ref: arinc424 spec, section 5.26
         std::string outbd_dist_time;  // Column 22. Distance in nm/time(min) from main_fix to next wpt. *10. 
-            // T at the end if time. Ref: arinc424 spec, section 5.27
+            // T at the beginning if time. Ref: arinc424 spec, section 5.27
         
         char alt_desc;  // Column 23. Ref: arinc424 spec, section 5.29
         std::string alt1;  // Column 24. In feet or flight level. Ref: arinc424 spec, section 5.30
@@ -312,6 +312,8 @@ namespace libnav
 
         std::vector<std::string> get_rwys();
 
+        const arinc_rwy_db_t& get_rwy_db();
+
         str_umap_t get_all_sids();
 
         str_umap_t get_all_stars();
@@ -335,6 +337,8 @@ namespace libnav
         str_set_t get_trans_by_sid(std::string& sid);
 
         str_set_t get_trans_by_star(std::string& star);
+
+        str_set_t get_trans_by_appch(std::string& appch);
 
         ~Airport();
 
