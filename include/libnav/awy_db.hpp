@@ -76,9 +76,17 @@ namespace libnav
         awy_line_t(std::string& s);
     };
 
+    struct awy_to_awy_data_t;
+
 
     typedef std::unordered_map<std::string, std::unordered_map<std::string, alt_restr_t>> graph_t;
     typedef std::unordered_map<std::string, graph_t> awy_db_t;
+    typedef bool (*awy_path_func_t)(std::string&, void*);
+
+
+    bool awy_wpt_to_wpt_func(std::string& curr, void* ref);
+
+    bool awy_awy_to_awy_func(std::string& curr, void* ref);
     
 
     class AwyDB
@@ -97,8 +105,50 @@ namespace libnav
 
         bool is_in_awy(std::string awy, std::string point);
 
-        int get_path(std::string awy, std::string start, 
+        /*
+            Fucntion: get_ww_path
+            Description:
+            Gets airway path from start waypoint to end waypoint
+            @param awy: airway name
+            @param start: start waypoint(airway id)
+            @param end: end waypoint(airway id)
+            @param out: pointer to output vector
+            @return size of out
+        */
+
+        size_t get_ww_path(std::string awy, std::string start, 
             std::string end, std::vector<awy_point_t>* out);
+
+        /*
+            Fucntion: get_aa_path
+            Description:
+            Gets airway path that starts at start waypoint and ends at the intersection
+            of awy and next_awy
+            @param awy: airway that start waypoint belongs to
+            @param start: start waypoint(airway id)
+            @param next_awy: airway to intersect with
+            @param out: pointer to output vector
+            @return size of out
+        */
+
+        size_t get_aa_path(std::string awy, std::string start, 
+            std::string next_awy, std::vector<awy_point_t>* out);
+
+        /*
+            Fucntion: get_path
+            Description:
+            Traverses the airway and returns path given a termination function.
+            @param awy: airway to be traversed
+            @param start: start waypoint(airway id)
+            @param out: pointer to output vector
+            @param path_func: termination function. Must return true when traversing
+            has to be stopped
+            @param ref: pointer to miscellaneous data passed to path_func
+            @return size of out
+        */
+
+        size_t get_path(std::string awy, std::string start, 
+            std::vector<awy_point_t>* out, awy_path_func_t path_func, void* ref);
 
         // You aren't supposed to call this function.
         // It's public to allow for the concurrent loading
@@ -112,5 +162,12 @@ namespace libnav
         std::future<DbErr> db_loaded;
 
         void add_to_awy_db(awy_point_t p1, awy_point_t p2, std::string awy_nm, char restr);
-    };    
+    };
+
+
+    struct awy_to_awy_data_t
+    {
+        std::string tgt_awy;
+        AwyDB *db_ptr;
+    };
 }; // namespace libnav

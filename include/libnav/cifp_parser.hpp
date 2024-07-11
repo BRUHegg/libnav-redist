@@ -11,6 +11,8 @@
     and load procedures for any airport in x-plane's CIFP data base.
 */
 
+#pragma once
+
 
 #include <string>
 #include <sstream>
@@ -102,6 +104,26 @@ namespace libnav
     constexpr int N_ARINC_RWY_COL_SECOND = 3;
 
     constexpr int N_FLT_LEG_CACHE_SZ = 3000;
+    // Approach prefixes
+    typedef std::unordered_map<char, std::string> appr_pref_db_t;
+
+    const appr_pref_db_t APPR_PREF = {
+        {'B', "LOC"},
+        {'G', "IGS"},
+        {'J', "GLS"},
+        {'M', "MLS"},
+        {'W', "MLS"},
+        {'Y', "MLS"},
+        {'I', "ILS"},
+        {'N', "NDB"},
+        {'Q', "NDME"},
+        {'R', "RNAV"},
+        {'S', "VOR"},
+        {'V', "VOR"},
+        {'T', "TACAN"},
+        {'U', "SDF"},
+        {'X', "LDA"}
+        };
 
     
     // Functions for decoding some arinc data fields:
@@ -291,14 +313,18 @@ namespace libnav
     std::vector<std::string> get_all_rwys_by_mask(std::string mask, 
         arinc_rwy_db_t& rwy_db);
 
+    std::string get_full_appr_nm(std::string nm, appr_pref_db_t& pref_db);
+
+	
+	typedef std::set<std::string> str_set_t;
+    typedef std::unordered_map<std::string, str_set_t> str_umap_t;
 
     class Airport
     {
         typedef std::unordered_map<std::string, std::vector<int>> trans_db_t;
         typedef std::unordered_map<std::string, trans_db_t> proc_db_t;
         typedef std::pair<std::string, ProcType> proc_typed_str_t;
-        typedef std::set<std::string> str_set_t;
-        typedef std::unordered_map<std::string, str_set_t> str_umap_t;
+        
 
     public:
         DbErr err_code;
@@ -308,7 +334,7 @@ namespace libnav
 
         Airport(std::string icao, std::shared_ptr<ArptDB> arpt_db, 
             std::shared_ptr<NavaidDB> navaid_db, std::string cifp_path="", 
-            std::string postfix=".dat");
+            std::string postfix=".dat", bool use_pr=false, appr_pref_db_t pr_db = APPR_PREF);
 
         std::vector<std::string> get_rwys();
 
@@ -343,6 +369,8 @@ namespace libnav
         ~Airport();
 
     private:
+        bool use_appch_prefix;
+        appr_pref_db_t appch_prefix_db;
         arinc_rwy_db_t rwy_db;
         arinc_leg_t* arinc_legs;
         int n_arinc_legs_used;
@@ -377,9 +405,38 @@ namespace libnav
 
         str_set_t get_trans_by_proc(std::string& proc_name, 
             proc_db_t db, bool rwy=false);
+			
+		/*
+            Function: parse_flt_legs
+            Description:
+            Parses flight legs. It takes them from flt_leg_strings. The function populates
+            SID/STAR/Approach and runway data bases.
+            @param arpt_db: pointer to airport data base
+            @param navaid_db: pointer to navaid data base
+            @return: error code. Can be either of the following: 
+                DbErr::SUCCESS
+                DbErr::PARTIAL_LOAD
+                DbErr::BAD_ALLOC
+        */
 
         DbErr parse_flt_legs(std::shared_ptr<ArptDB> arpt_db, 
             std::shared_ptr<NavaidDB> navaid_db);
+
+		/*
+            Function: load_db
+            Description:
+            Loads a CIFP data base
+            @param arpt_db: pointer to airport data base
+            @param navaid_db: pointer to navaid data base
+            @param path: path to directory of target data base file
+            @param postfix: file extension of target data base e.g. .dat
+            @return: error code. Can be either of the following: 
+                DbErr::SUCCESS
+                DbErr::DATA_BASE_ERROR
+                DbErr::FILE_NOT_FOUND
+                DbErr::PARTIAL_LOAD
+                DbErr::BAD_ALLOC
+        */
 
         DbErr load_db(std::shared_ptr<ArptDB> arpt_db, 
             std::shared_ptr<NavaidDB> navaid_db, std::string& path, 
