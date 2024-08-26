@@ -27,6 +27,7 @@ namespace strutils
 {
 	constexpr int N_LAT_STR_LENGTH = 9;
 	constexpr int N_LON_STR_LENGTH = 10;
+	constexpr char DEGREE_SYMBOL = '\370';
 
 
 	inline bool is_numeric(std::string& s)
@@ -48,6 +49,43 @@ namespace strutils
 		s << std::fixed << std::setprecision(precision) << num;
 		return s.str();
 	}
+
+	inline double strtod(std::string s)
+    {
+        size_t d_idx = 0;
+
+        while(s[d_idx] != '.' && d_idx < s.size())
+            d_idx++;
+
+        double out = 0;
+        double curr_p = 1;
+
+        bool is_neg = s[0] == '-';
+        
+        if(d_idx)
+        {
+            for(size_t i = d_idx - 1; i >= size_t(is_neg); i--)
+            {
+                out += double(s[i] - '0') * curr_p;
+                curr_p *= 10;
+                if(i == size_t(is_neg))
+                    break;
+            }
+        }
+
+        curr_p = 0.1;
+
+        for(size_t i = d_idx+1; i < s.size(); i++)
+        {
+            out += double(s[i] - '0') * curr_p;
+            curr_p *= 0.1;
+        }
+
+        if(is_neg)
+            out *= -1;
+
+        return out;
+    }
 
 	/*
 		Converts a double frequency to Boeing-style string representation
@@ -76,7 +114,7 @@ namespace strutils
 		Converts value in degrees to string Deg,Min,Sec notation
 	*/
 
-	inline std::string deg_to_str(double abs_deg)
+	inline std::string deg_to_str(double abs_deg, char deg_sbl=DEGREE_SYMBOL)
 	{
 		std::string s;
 		std::vector<int> repr;
@@ -95,7 +133,7 @@ namespace strutils
 		}
 
 		s.append(std::to_string(repr[0]));
-		s.append("°");
+		s.append(std::string(1, deg_sbl));
 		s.append(std::to_string(repr[1]));
 		s.append(".");
 		s.append(std::to_string(round(double(repr[2]) / 10)).substr(0, 1));
@@ -107,7 +145,7 @@ namespace strutils
 		Converts latitude value in degrees to string Deg,Min,Sec notation
 	*/
 
-	inline std::string lat_to_str(double lat_deg)
+	inline std::string lat_to_str(double lat_deg, char deg_sbl=DEGREE_SYMBOL)
 	{
 		std::string s;
 		double abs_lat = abs(lat_deg);
@@ -121,7 +159,7 @@ namespace strutils
 			s.append("N");
 		}
 
-		s.append(deg_to_str(abs_lat));
+		s.append(deg_to_str(abs_lat, deg_sbl));
 
 		return s;
 	}
@@ -156,7 +194,7 @@ namespace strutils
 		Converts longitude value in degrees to string Deg,Min,Sec notation
 	*/
 
-	inline std::string lon_to_str(double lon_deg)
+	inline std::string lon_to_str(double lon_deg, char deg_sbl=DEGREE_SYMBOL)
 	{
 		std::string s;
 		double abs_lon = abs(lon_deg);
@@ -174,7 +212,7 @@ namespace strutils
 			s.append("0");
 		}
 
-		s.append(deg_to_str(abs_lon));
+		s.append(deg_to_str(abs_lon, deg_sbl));
 
 		return s;
 	}
